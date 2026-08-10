@@ -1,0 +1,7 @@
+# Copy to gradle.properties (gitignored) and refresh the CodeArtifact token:
+#   aws codeartifact get-authorization-token \
+#     --domain fancia-dev --domain-owner 562676253586 --region eu-west-2 \
+#     --query authorizationToken --output text
+ARTIFACT_REPO_URL=https://fancia-dev-562676253586.d.codeartifact.eu-west-2.amazonaws.com/maven
+ARTIFACT_REPO_USER=aws
+ARTIFACT_REPO_PASSWORD=
