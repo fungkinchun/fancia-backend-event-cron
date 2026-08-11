@@ -22,20 +22,20 @@ class EventOccurrenceService(
     private val eventOccurrenceRepository: EventOccurrenceRepository,
 ) {
     /**
-     * Materialises upcoming recurrence slots into the DB up to [DEFAULT_HORIZON_WEEKS].
-     * Intended to run from the event-cron Lambda, not on API read paths.
+     * Ensures the next few future occurrence rows exist for a recurring event.
+     * Caps: weekly = 3, monthly = 1, daily = 3. Skips slots that already exist.
      */
     @Transactional
     fun ensureUpcomingOccurrences(event: Event, now: LocalDateTime): Int {
         if (event.recurrenceFrequency == RecurrenceFrequency.NONE) return 0
         val eventId = event.id ?: return 0
+        val maxFuture = maxFutureOccurrences(event.recurrenceFrequency)
 
-        val horizon = now.plusWeeks(DEFAULT_HORIZON_WEEKS)
         var cursor = now
+        var futureSlots = 0
         var generated = 0
-        while (generated < MAX_GENERATED_PER_CALL) {
+        while (futureSlots < maxFuture) {
             val nextStart = RecurringEventVisibility.nextOccurrenceStart(event, cursor) ?: break
-            if (nextStart.isAfter(horizon)) break
 
             val nextEnd = RecurringEventVisibility.nextOccurrenceEnd(event, cursor)
                 ?: nextStart.plus(
@@ -55,10 +55,19 @@ class EventOccurrenceService(
                 generated++
             }
 
+            futureSlots++
             cursor = nextStart.plusSeconds(1)
         }
         return generated
     }
+
+    private fun maxFutureOccurrences(frequency: RecurrenceFrequency): Int =
+        when (frequency) {
+            RecurrenceFrequency.WEEKLY -> MAX_FUTURE_WEEKLY
+            RecurrenceFrequency.MONTHLY -> MAX_FUTURE_MONTHLY
+            RecurrenceFrequency.DAILY -> MAX_FUTURE_DAILY
+            RecurrenceFrequency.NONE -> 0
+        }
 
     private fun addHostParticipant(occurrence: EventOccurrence, hostUserId: java.util.UUID) {
         val occurrenceId = occurrence.id ?: return
@@ -85,7 +94,8 @@ class EventOccurrenceService(
     }
 
     companion object {
-        private const val DEFAULT_HORIZON_WEEKS = 8L
-        private const val MAX_GENERATED_PER_CALL = 52
+        private const val MAX_FUTURE_WEEKLY = 3
+        private const val MAX_FUTURE_MONTHLY = 1
+        private const val MAX_FUTURE_DAILY = 3
     }
 }

@@ -5,7 +5,7 @@ Spring Boot batch Lambda that materialises upcoming `event_occurrences` rows for
 ## Behaviour
 
 - On startup, `EnsureUpcomingOccurrencesJob` loads all recurring events and calls `EventOccurrenceService.ensureUpcomingOccurrences`.
-- Horizon: **8 weeks** ahead, max **52** new rows per event per run.
+- Caps future occurrences per frequency: **weekly = 3**, **monthly = 1**, **daily = 3**.
 - Idempotent on `(event_id, start_time)`; copies HOST/COHOST participants from the first occurrence.
 - Process exits after the job finishes (suitable for EventBridge → Lambda).
 - Flyway, security, Kafka, Feign, and mail auto-config are disabled — schema ownership stays with **event-service**.
