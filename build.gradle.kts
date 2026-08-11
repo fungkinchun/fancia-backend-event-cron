@@ -112,19 +112,39 @@ tasks.jar {
     enabled = false
 }
 
+val lambdaClasspathDir = layout.buildDirectory.dir("lambda-classpath")
+
+tasks.register<Sync>("prepareLambdaClasspath") {
+    group = "build"
+    description = "Flatten Spring Boot jar into Lambda classpath layout"
+    dependsOn(tasks.bootJar)
+    into(lambdaClasspathDir)
+
+    from(zipTree(tasks.bootJar.flatMap { it.archiveFile })) {
+        include("BOOT-INF/classes/**")
+        eachFile {
+            relativePath = RelativePath(true, *relativePath.segments.drop(2).toTypedArray())
+        }
+        includeEmptyDirs = false
+    }
+    from(zipTree(tasks.bootJar.flatMap { it.archiveFile })) {
+        include("BOOT-INF/lib/**")
+        eachFile {
+            relativePath = RelativePath(true, "lib", *relativePath.segments.drop(2).toTypedArray())
+        }
+        includeEmptyDirs = false
+    }
+}
+
 tasks.register<Zip>("lambdaZip") {
     group = "build"
-    description = "AWS Lambda Zip package (flat classpath for Java handler)"
+    description = "AWS Lambda Zip package (BOOT-INF flattened for Java handler)"
     archiveFileName.set("${project.name}-lambda.zip")
     destinationDirectory.set(layout.buildDirectory.dir("distributions"))
     isZip64 = true
 
-    dependsOn(tasks.classes)
-
-    from(sourceSets.main.get().output)
-    into("lib") {
-        from(configurations.runtimeClasspath)
-    }
+    dependsOn("prepareLambdaClasspath")
+    from(lambdaClasspathDir)
 }
 
 tasks.withType<Test> {
