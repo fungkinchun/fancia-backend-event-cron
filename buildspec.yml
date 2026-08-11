@@ -54,7 +54,7 @@ phases:
             echo "Uploading Lambda ZIP to S3..."
             aws s3 cp build/distributions/*-lambda.zip s3://$PROJECT_NAME-$ENV-backend-artifacts/$REPO_NAME.zip
 
-            FUNCTION_NAME="${PROJECT_NAME}-${ENV}-${REPO_NAME}"
+            FUNCTION_NAME="${PROJECT_NAME}-${ENV}-${REPO_NAME}-api"
             echo "Updating Lambda function code..."
             aws lambda update-function-code \
               --function-name "$FUNCTION_NAME" \
