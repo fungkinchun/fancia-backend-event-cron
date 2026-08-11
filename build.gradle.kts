@@ -90,6 +90,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-flyway:4.0.5")
     implementation("org.flywaydb:flyway-database-postgresql")
     implementation("org.crac:crac:1.5.0")
+    implementation("com.amazonaws:aws-lambda-java-core:1.2.3")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
@@ -113,21 +114,16 @@ tasks.jar {
 
 tasks.register<Zip>("lambdaZip") {
     group = "build"
-    description = "AWS Lambda Zip package (run.sh + boot JAR)"
+    description = "AWS Lambda Zip package (flat classpath for Java handler)"
     archiveFileName.set("${project.name}-lambda.zip")
     destinationDirectory.set(layout.buildDirectory.dir("distributions"))
     isZip64 = true
 
-    dependsOn(tasks.bootJar)
+    dependsOn(tasks.classes)
 
-    from(tasks.bootJar) {
-        rename { "app.jar" }
-    }
-    from("src/lambda") {
-        include("run.sh")
-        filePermissions {
-            unix("rwxr-xr-x")
-        }
+    from(sourceSets.main.get().output)
+    into("lib") {
+        from(configurations.runtimeClasspath)
     }
 }
 
