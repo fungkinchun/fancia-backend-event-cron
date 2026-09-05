@@ -14,10 +14,6 @@ import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 import java.util.UUID
 
-/**
- * Cron entrypoint: materialise upcoming occurrence rows for all recurring events, then exit.
- * Invoked by EventBridge → Lambda (Spring Boot run-once).
- */
 @Component
 class EnsureUpcomingOccurrencesJob(
     private val eventRepository: EventRepository,

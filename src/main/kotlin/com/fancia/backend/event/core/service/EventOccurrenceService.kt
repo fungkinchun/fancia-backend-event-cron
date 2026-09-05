@@ -6,6 +6,7 @@ import com.fancia.backend.shared.event.core.entity.EventParticipant
 import com.fancia.backend.shared.event.core.entity.EventParticipantId
 import com.fancia.backend.event.core.repository.EventOccurrenceRepository
 import com.fancia.backend.event.core.repository.EventRepository
+import com.fancia.backend.shared.event.core.support.EventTimeSlotSchedule
 import com.fancia.backend.shared.event.core.support.RecurringEventVisibility
 import com.fancia.backend.shared.event.core.enums.EventRole
 import com.fancia.backend.shared.event.core.enums.OccurrenceStatus
@@ -21,42 +22,51 @@ class EventOccurrenceService(
     private val eventRepository: EventRepository,
     private val eventOccurrenceRepository: EventOccurrenceRepository,
 ) {
-    /**
-     * Ensures the next few future occurrence rows exist for a recurring event.
-     * Caps: weekly = 3, monthly = 1, daily = 3. Skips slots that already exist.
-     */
     @Transactional
     fun ensureUpcomingOccurrences(event: Event, now: LocalDateTime): Int {
         if (event.recurrenceFrequency == RecurrenceFrequency.NONE) return 0
         val eventId = event.id ?: return 0
-        val maxFuture = maxFutureOccurrences(event.recurrenceFrequency)
+        val live = eventRepository.findById(eventId).orElse(null) ?: return 0
+        val anchors = EventTimeSlotSchedule.anchors(live)
+        if (anchors.isEmpty()) return 0
+        val maxFuture = maxFutureOccurrences(live.recurrenceFrequency)
 
-        var cursor = now
-        var futureSlots = 0
         var generated = 0
-        while (futureSlots < maxFuture) {
-            val nextStart = RecurringEventVisibility.nextOccurrenceStart(event, cursor) ?: break
+        for (anchor in anchors) {
+            var cursor = now
+            var futureSlots = 0
+            while (futureSlots < maxFuture) {
+                val nextStart = RecurringEventVisibility.nextOccurrenceStartForAnchor(
+                    live,
+                    anchor.startTime,
+                    cursor,
+                ) ?: break
 
-            val nextEnd = RecurringEventVisibility.nextOccurrenceEnd(event, cursor)
-                ?: nextStart.plus(
-                    Duration.between(event.startTime ?: nextStart, event.endTime ?: nextStart.plusHours(1)),
-                )
+                val nextEnd = RecurringEventVisibility.nextOccurrenceEndForAnchor(
+                    live,
+                    anchor.startTime,
+                    anchor.endTime,
+                    cursor,
+                ) ?: nextStart.plus(Duration.between(anchor.startTime, anchor.endTime))
 
-            if (!eventOccurrenceRepository.existsByEventIdAndStartTime(eventId, nextStart)) {
-                val occurrence = EventOccurrence().apply {
-                    this.event = eventRepository.getReferenceById(eventId)
-                    this.startTime = nextStart
-                    this.endTime = nextEnd
-                    this.status = OccurrenceStatus.SCHEDULED
-                    this.createdBy = event.createdBy
+                if (!eventOccurrenceRepository.existsByEventIdAndStartTime(eventId, nextStart)) {
+                    val slot = live.timeSlots.firstOrNull { it.id == anchor.id }
+                    val occurrence = EventOccurrence().apply {
+                        this.event = eventRepository.getReferenceById(eventId)
+                        this.timeSlot = slot
+                        this.startTime = nextStart
+                        this.endTime = nextEnd
+                        this.status = OccurrenceStatus.SCHEDULED
+                        this.createdBy = live.createdBy
+                    }
+                    val saved = eventOccurrenceRepository.save(occurrence)
+                    copyHostsFromFirstOccurrence(eventId, saved)
+                    generated++
                 }
-                val saved = eventOccurrenceRepository.save(occurrence)
-                copyHostsFromFirstOccurrence(eventId, saved)
-                generated++
-            }
 
-            futureSlots++
-            cursor = nextStart.plusSeconds(1)
+                futureSlots++
+                cursor = nextStart.plusSeconds(1)
+            }
         }
         return generated
     }

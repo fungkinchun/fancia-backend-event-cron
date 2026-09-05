@@ -3,9 +3,6 @@ package com.fancia.backend.event.core.exception
 import com.fancia.backend.shared.common.core.exception.DomainException
 import java.util.UUID
 
-/**
- * Raised when upcoming occurrence materialisation fails for a single recurring event.
- */
 class OccurrenceGenerationFailedException(
     val eventId: UUID,
     cause: Throwable? = null,
@@ -46,9 +43,6 @@ data class OccurrenceGenerationFailure(
     val message: String?,
 )
 
-/**
- * Raised when the cron job finished with one or more per-event failures.
- */
 class OccurrenceGenerationJobFailedException(
     val failures: List<OccurrenceGenerationFailure>,
     title: String = "Occurrence Generation Job Failed",
