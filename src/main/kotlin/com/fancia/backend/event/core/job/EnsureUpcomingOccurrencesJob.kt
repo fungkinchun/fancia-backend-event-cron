@@ -3,7 +3,7 @@ package com.fancia.backend.event.core.job
 import com.fancia.backend.event.core.exception.OccurrenceGenerationFailedException
 import com.fancia.backend.event.core.exception.OccurrenceGenerationFailure
 import com.fancia.backend.event.core.exception.OccurrenceGenerationJobFailedException
-import com.fancia.backend.event.core.repository.EventRepository
+import com.fancia.backend.shared.event.core.repository.EventRepository
 import com.fancia.backend.event.core.service.EventOccurrenceService
 import com.fancia.backend.shared.common.core.exception.DomainException
 import com.fancia.backend.shared.event.core.enums.RecurrenceFrequency

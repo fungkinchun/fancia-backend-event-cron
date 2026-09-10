@@ -4,8 +4,8 @@ import com.fancia.backend.shared.event.core.entity.Event
 import com.fancia.backend.shared.event.core.entity.EventOccurrence
 import com.fancia.backend.shared.event.core.entity.EventParticipant
 import com.fancia.backend.shared.event.core.entity.EventParticipantId
-import com.fancia.backend.event.core.repository.EventOccurrenceRepository
-import com.fancia.backend.event.core.repository.EventRepository
+import com.fancia.backend.shared.event.core.repository.EventOccurrenceRepository
+import com.fancia.backend.shared.event.core.repository.EventRepository
 import com.fancia.backend.shared.event.core.support.EventTimeSlotSchedule
 import com.fancia.backend.shared.event.core.support.RecurringEventVisibility
 import com.fancia.backend.shared.event.core.enums.EventRole

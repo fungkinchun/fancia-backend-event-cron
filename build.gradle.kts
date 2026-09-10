@@ -52,7 +52,6 @@ dependencyManagement {
 }
 
 dependencies {
-    // Same stack as event-service; unused auto-config is excluded via application.yaml
     implementation("org.springframework.boot:spring-boot-starter")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-web")

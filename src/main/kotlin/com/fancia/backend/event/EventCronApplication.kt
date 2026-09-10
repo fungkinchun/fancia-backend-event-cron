@@ -15,7 +15,7 @@ import kotlin.system.exitProcess
 )
 @EnableJpaRepositories(
     basePackages = [
-        "com.fancia.backend.event.core.repository",
+        "com.fancia.backend.shared.event.core.repository",
     ],
 )
 @SpringBootApplication(scanBasePackages = ["com.fancia.backend.event"])
